@@ -53,9 +53,13 @@ zation
 def OrigSimplifiedLogL(mu,n,s,b):
     return math.log(SimplifiedLikelihoodFunction(mu,n,s,b))
 
+################################################################
+################################################################
+################################################################
+
 def SimplifiedLogL(mu,n,s,b):
     """
-    Functio that calculates the Likelihood for a given:
+    Function that calculates the Likelihood for a given:
     mu -> Signal strength
     theta -> Vector of systematic uncertainties (theta_s,theta_b,b_tot) in general, only implemented as a single paramter controling b normali
 zation
@@ -83,6 +87,10 @@ def ShiftSignSimplifiedLogL(mu,n,s,b):
 
 def MaxSimpLogL(mu,n,s,b,minm,maxm):
     return optimize.minimize(ShiftSignSimplifiedLogL,[mu],args=(n,s,b),bounds=[(minm,maxm)])
+
+###########################################################
+###########################################################
+###########################################################
 
 #Based on section 3.6 from 1007.1727
 def UpperLimitsTestStats(muhat,mu,sigma):
@@ -136,6 +144,10 @@ Maximum=StatsMethods.MaxSimpLogL(Mymu,n_3b,s_3b,b_3b,0.01,None)
 StatsMethods.FindUpperLimit(Maximum.x[0],2.5)
 """
 
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
+
 #Implementation following 1708.01007
 #For unbinned data
 
@@ -171,6 +183,10 @@ StatsMethods.ShiftSignLogLParamEstimResonance(x,GaussianPDF,10.,1.0)
 StatsMethods.MaxLogLParamEstimResonance(x,GaussianPDF,10.,1.0,0.0,20.0,1.0,5.0)
 """
 
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+
 #Implementation of parameter estimation following Maximum Likelihood approach discussed on section 6.10
 #of Statitical Data Analysis from Glen Cowan
 
@@ -200,6 +216,10 @@ def FindMaxParam(n_observed,b_expected,SignalSet):
         LogLVector.append(ParamsLogLikelihood(n_observed,b_expected,SignalSet[i]))
 
     return max(LogLVector), LogLVector.index(max(LogLVector)), SignalSet[LogLVector.index(max(LogLVector))]
+
+######################################################################################################
+######################################################################################################
+######################################################################################################
 
 #Implementation of chi2 method and p-value
 #As discussed in chapter 7 of Statitical Data Analysis from Glen Cowan
@@ -246,7 +266,6 @@ Out[21]: (8.5769807206118909, 15, array([0, 1, 1, 2, 2, 3, 2]))
 BinnedChi2(np.array(n),np.array(b)+0.2*np.array(s),Normalized=True)
 Chi2pValue(BinnedChi2(np.array(n),np.array(b)),7)
 """
-
 def MuChi2(mu,n,s,b):
     return BinnedChi2(n,(mu*s)+b)
 
@@ -260,3 +279,41 @@ def FindUpperLimitChi2(n,s,b,alpha=0.05,Mumin=0.0,Mumax=10.0,Steps=1000):
         #print(mui,pvalue)
         if pvalue>alpha:
             return mui-((Mumax-Mumin)/Steps), pvalue
+
+
+######################################################################################################
+######################################################################################################
+######################################################################################################
+
+#Computational approach without factorials
+
+def CompSimpLogL(mu,n,s,b):
+    """
+    Function that calculates the Likelihood for a given:
+    mu -> Signal strength
+    theta -> Vector of systematic uncertainties (theta_s,theta_b,b_tot) in general, only implemented as a single paramter controling b normali
+zation
+    n -> Vector (histogram) of n expected counts
+    s -> Vector (histogram) of expected signal events, must be the same dimension as n
+    b -> Vector (histogram) of expected background events, must be the same dimension as n
+    """
+    if len(n)!=len(s) or len(n)!=len(b):
+        print("Size of n, s and b must be the same!")
+        return 0
+    L1=0.0
+    for i in range(len(n)):
+        theory=(mu*s[i])+b[i]
+        L1+=(n[i]*math.log(theory))-theory
+    return L1
+
+def ProfileSimpCompLogL(mu,muhat,n,s,b):
+    return CompSimpLogL(mu,n,s,b)-CompSimpLogL(muhat,n,s,b)
+
+def SimpCompTestStatistics(mu,muhat,n,s,b):
+    return -2*ProfileSimpCompLogL(mu,muhat,n,s,b)
+
+def ShiftSignCompSimpLogL(mu,n,s,b):
+    return -1*CompSimpLogL(mu,n,s,b)
+
+def MaxCompSimpLogL(mu,n,s,b,minm,maxm):
+    return optimize.minimize(ShiftSignCompSimpLogL,[mu],args=(n,s,b),bounds=[(minm,maxm)])
